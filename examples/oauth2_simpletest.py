@@ -53,9 +53,8 @@ google_auth.request_codes()
 print("1) Navigate to the following URL in a web browser:", google_auth.verification_url)
 print("2) Enter the following code: ", google_auth.user_code)
 
-# Poll Google's Authorization server
-while not google_auth.is_authorized:
-    print("Waiting for browser authorization...")
-    if not google_auth.wait_for_authorization():
-        raise RuntimeError("Timed out waiting for browser response!")
+print("Waiting for browser authorization...")
+if not google_auth.wait_for_authorization():
+    raise RuntimeError("Timed out waiting for browser response!")
+
 print("Successfully authorized with Google!")

@@ -40,15 +40,16 @@ class OAuth2:
     """Implements OAuth2.0 authorization to access
     Google APIs via the OAuth 2.0 limited-input device application flow.
     https://developers.google.com/identity/protocols/oauth2/limited-input-device
-
     :param requests: An adafruit_requests object.
     :param str client_id: The client ID for your application.
     :param str client_secret: The client secret obtained from the API Console.
     :param list scopes: Scopes that identify the resources the application
                         can access on the user's behalf.
+    :param str access_token: Optional token which authorizes a Google API request.
+    :param str refresh_token: Optional token which allows you to obtain a new access token.
 
     """
-    def __init__(self, requests, client_id, client_secret, scopes):
+    def __init__(self, requests, client_id, client_secret, scopes, access_token=None, refresh_token=None):
         self._requests = requests
         self._client_id = client_id
         self._client_secret = client_secret
@@ -64,14 +65,18 @@ class OAuth2:
         self.verification_url = None
         # Identifies the scopes requested by the application
         self.user_code = None
-        # The token that your application sends to authorize a Google API request
-        self.access_token = None
-        # A token that you can use to obtain a new access token.
-        # Refresh tokens are valid until the user revokes access. 
-        self.refresh_token = None
+        # The remaining lifetime of the access token, in seconds
+        self.access_token_expiration
+        # The scopes of access granted by the access_token as a list
+        self.access_token_scope = None
 
-        # True if Google Authorization server successfully authorized device, False otherwise
-        self._is_authorized = False
+        if access_token:
+            # The token that your application sends to authorize a Google API request
+            self.access_token = access_token
+        if refresh_token:
+            # A token that you can use to obtain a new access token
+            # Refresh tokens are valid until the user revokes access
+            self.refresh_token = None
 
     def request_codes(self):
         """Identifies your application and access scopes with Google's
@@ -131,9 +136,30 @@ class OAuth2:
             # sleep for _interval seconds
             time.sleep(self._interval)
         self.access_token = json_resp['access_token']
+        self.access_token_expiration = json_resp['expires_in']
         self.refresh_token = json_resp['refresh_token']
+        self.access_token_scope = json_resp['access_token_scope']
         return True
-    
-    @property
-    def is_authorized(self):
-        return self._is_authorized
+
+    def refresh_token(self):
+        """Refreshes an expired access token.
+        Returns True if able to refresh an access token, False otherwise.
+        """
+        headers = {"Host": "oauth2.googleapis.com",
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Content-Length":"0"}
+        url = "https://oauth2.googleapis.com/token?" \
+            "client_id={0}" \
+            "&client_secret={1}" \
+            "&refresh_token={2}" \
+            "&grant_type=refresh_token".format(self._client_id, \
+            self.access_token, self.refresh_token)
+        resp = self._requests.post(url, headers=headers)
+        if resp.status_code == 400:
+            return False
+        json_resp = resp.json()
+        resp.close()
+        self.access_token = json_resp['access_token']
+        self.access_token_expiration = json_resp['expires_in']
+        self.access_token_scope = json_resp['access_token_scope']
+        return True
