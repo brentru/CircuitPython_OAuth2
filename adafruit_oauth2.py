@@ -113,9 +113,11 @@ class oauth2:
         """
         headers = {"Content-Type": "application/x-www-form-urlencoded",
                    "Content-Length":"0"}
-        url = DEVICE_TOKEN_ENDPOINT + "?client_id={0}" + \
-              "&client_secret={1}&device_code={3}" + DEVICE_GRANT_TYPE.format(self._client_id,
-              self._client_secret, self._device_code)
+        url = "https://oauth2.googleapis.com/token?client_id={0}" \
+                            "&client_secret={1}&device_code={2}" \
+                            "&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code" \
+                            .format(self._client_id, self._client_secret, self._device_code)
+
         # Blocking loop to poll endpoint
         start_time = time.monotonic()
         while True:
@@ -127,33 +129,31 @@ class oauth2:
             resp.close()
             # Handle error responses
             if 'error' in json_resp:
-                raise RuntimeError('Error: ', json_resp['error_description'])
+                if json_resp['error'] != "authorization_pending": # Raise all errors, except pending
+                    raise RuntimeError('Error: ', json_resp['error_description'])
             # Handle successful response
             elif "access_token" in json_resp:
                 break
             # sleep for _interval seconds
             time.sleep(self._interval)
+        print(json_resp)
         self.access_token = json_resp['access_token']
         self.access_token_expiration = json_resp['expires_in']
         self.refresh_token = json_resp['refresh_token']
-        self.access_token_scope = json_resp['access_token_scope']
+        self.access_token_scope = json_resp['scope']
         return True
 
     def refresh_access_token(self):
         """Refreshes an expired access token.
         Returns True if able to refresh an access token, False otherwise.
         """
+        
         headers = {"Host": "oauth2.googleapis.com",
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Content-Length":"0"}
-        url = "https://oauth2.googleapis.com/token?" \
-            "client_id={0}" \
-            "&client_secret={1}" \
-            "&refresh_token={2}" \
-            "&grant_type=refresh_token".format(self._client_id, \
-            self.access_token, self.refresh_token)
+                   "Content-Type": "application/x-www-form-urlencoded",
+                   "Content-Length":"0"}
+        url = "https://oauth2.googleapis.com/token?client_id={0}&client_secret={1}&grant_type=refresh_token&refresh_token={2}".format(self._client_id, self._client_secret, self.refresh_token)
         resp = self._requests.post(url, headers=headers)
-        if resp.status_code == 400:
+        if resp.status_code == 400 or resp.status_code == 404:
             return False
         json_resp = resp.json()
         resp.close()
