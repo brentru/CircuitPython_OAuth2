@@ -16,7 +16,7 @@ import adafruit_oauth2 as oauth2
 try:
     from secrets import secrets
 except ImportError:
-    print("WiFi secrets are kept in secrets.py, please add them there!")
+    print("Credentials and tokens are kept in secrets.py, please add them there!")
     raise
 
 esp32_cs = DigitalInOut(board.ESP_CS)
@@ -35,11 +35,16 @@ while not esp.is_connected:
         continue
 print("Connected to", str(esp.ssid, "utf-8"), "\tRSSI:", esp.rssi)
 
-# Initialize a requests object with a socket and esp32spi interface
+# Initialize a requests object
 socket.set_interface(esp)
 requests.set_socket(socket, esp)
 
-google_auth = oauth2(requests, client_id, client_secret, scopes)
+# Set scope(s) of access required by the API you're using
+scopes = ["https://www.googleapis.com/auth/drive.metadata.readonly"]
+
+# Initialize an oauth2 object
+google_auth = oauth2(requests, secrets['google_client_id'],
+                     secrets['google_client_secret'], scopes)
 
 # Request device and user codes
 # https://developers.google.com/identity/protocols/oauth2/limited-input-device#step-1:-request-device-and-user-codes
@@ -53,8 +58,20 @@ google_auth.request_codes()
 print("1) Navigate to the following URL in a web browser:", google_auth.verification_url)
 print("2) Enter the following code: ", google_auth.user_code)
 
+# Poll Google's authorization server
 print("Waiting for browser authorization...")
 if not google_auth.wait_for_authorization():
     raise RuntimeError("Timed out waiting for browser response!")
 
 print("Successfully authorized with Google!")
+
+print("\tAccess Token: ", google_auth.access_token)
+print("\tAccess Token Scope: ", google_auth.access_token_scope)
+print("\tAccess token expires in: %d seconds", google_auth.access_token)
+print("\tRefresh Token: ", google_auth.refresh_token)
+
+# Refresh an access token
+print("Refreshing the access token")
+if not google_auth.refresh_access_token():
+    raise RuntimeError("Unable to refresh access token - has the token been revoked?")
+print("\tNew Access Token: ", google_auth.access_token)

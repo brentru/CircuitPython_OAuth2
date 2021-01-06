@@ -141,7 +141,7 @@ class OAuth2:
         self.access_token_scope = json_resp['access_token_scope']
         return True
 
-    def refresh_token(self):
+    def refresh_access_token(self):
         """Refreshes an expired access token.
         Returns True if able to refresh an access token, False otherwise.
         """
