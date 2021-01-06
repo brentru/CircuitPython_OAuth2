@@ -34,9 +34,9 @@ DEVICE_AUTHORIZATION_ENDPOINT = "https://oauth2.googleapis.com/device/code"
 # URL of endpoint to poll
 DEVICE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
 # Set to urn:ietf:params:oauth:grant-type:device_code.
-DEVICE_GRANT_TYPE = "urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code"
+DEVICE_GRANT_TYPE = "&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code"
 
-class OAuth2:
+class oauth2:
     """Implements OAuth2.0 authorization to access
     Google APIs via the OAuth 2.0 limited-input device application flow.
     https://developers.google.com/identity/protocols/oauth2/limited-input-device
@@ -66,7 +66,7 @@ class OAuth2:
         # Identifies the scopes requested by the application
         self.user_code = None
         # The remaining lifetime of the access token, in seconds
-        self.access_token_expiration
+        self.access_token_expiration = None
         # The scopes of access granted by the access_token as a list
         self.access_token_scope = None
 
@@ -85,9 +85,9 @@ class OAuth2:
         headers = {"Host": "oauth2.googleapis.com",
                    "Content-Type": "application/x-www-form-urlencoded",
                    "Content-Length":"0"}
+        scope = ' '.join(self._scopes)
         url = DEVICE_AUTHORIZATION_ENDPOINT + \
-              "?client_id={0}&scope={1}".format(self._client_id, self._scopes)
-
+              "?client_id={0}&scope={1}".format(self._client_id, scope)
         response = self._requests.post(url, headers=headers)
         json_resp = response.json()
         response.close()
@@ -113,11 +113,9 @@ class OAuth2:
         """
         headers = {"Content-Type": "application/x-www-form-urlencoded",
                    "Content-Length":"0"}
-        url = DEVICE_TOKEN_ENDPOINT + \
-              "?client_id={0}&client_secret={1}&device_code={3}" + \
-              DEVICE_GRANT_TYPE.format(self._client_id, self._client_secret,
-              self._device_code)
-
+        url = DEVICE_TOKEN_ENDPOINT + "?client_id={0}" + \
+              "&client_secret={1}&device_code={3}" + DEVICE_GRANT_TYPE.format(self._client_id,
+              self._client_secret, self._device_code)
         # Blocking loop to poll endpoint
         start_time = time.monotonic()
         while True:
