@@ -24,12 +24,17 @@ Implementation Notes
 """
 
 # imports
+import time
 
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_OAuth2.git"
 
 # Google's authorization server
 DEVICE_AUTHORIZATION_ENDPOINT = "https://oauth2.googleapis.com/device/code"
+# URL of endpoint to poll
+DEVICE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
+# Set to urn:ietf:params:oauth:grant-type:device_code.
+DEVICE_GRANT_TYPE = "urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code"
 
 class OAuth2:
     """Implements OAuth2.0 authorization to access
@@ -48,16 +53,25 @@ class OAuth2:
         self._client_id = client_id
         self._client_secret = client_secret
         self._scopes = scopes
-        # empty properties for tokens during auth. process
+
+        # A value that Google uniquely assigns to identify the device that runs the app requesting authorization. 
         self._device_code = None
-        # length of time that the codes above are valid, in seconds
+        # The length of time that the codes above are valid, in seconds
         self._expiration_time = None
-        # length of time we'll wait between polling the auth. server
+        # The length of time we'll wait between polling the auth. server
         self._interval = None
-        # url user must navigate to on a browser
-        self._verification_url = None
-        # identifies the scopes requested by the application
-        self._user_code = None
+        # A url user must navigate to on a browser
+        self.verification_url = None
+        # Identifies the scopes requested by the application
+        self.user_code = None
+        # The token that your application sends to authorize a Google API request
+        self.access_token = None
+        # A token that you can use to obtain a new access token.
+        # Refresh tokens are valid until the user revokes access. 
+        self.refresh_token = None
+
+        # True if Google Authorization server successfully authorized device, False otherwise
+        self._is_authorized = False
 
     def request_codes(self):
         """Identifies your application and access scopes with Google's
@@ -80,5 +94,46 @@ class OAuth2:
         self._device_code = json_resp['device_code']
         self._expiration_time = json_resp['expires_in']
         self._interval = json_resp['interval']
-        self._verification_url = json_resp['verification_url']
-        self._user_code = json_resp['user_code']
+        self.verification_url = json_resp['verification_url']
+        self.user_code = json_resp['user_code']
+
+    def wait_for_authorization(self):
+        """Blocking method which polls Google's authorization server
+        until a response from Google's authorization server indicating
+        that the user has responded to the access request, or until the
+        user_code has expired.
+
+        Returns True if device was successfully authenticated, False otherwise.
+
+        """
+        headers = {"Content-Type": "application/x-www-form-urlencoded",
+                   "Content-Length":"0"}
+        url = DEVICE_TOKEN_ENDPOINT + \
+              "?client_id={0}&client_secret={1}&device_code={3}" + \
+              DEVICE_GRANT_TYPE.format(self._client_id, self._client_secret,
+              self._device_code)
+
+        # Blocking loop to poll endpoint
+        start_time = time.monotonic()
+        while True:
+            if not time.monotonic() - start_time < self._expiration_time:
+                # user_code and device_code expired
+                return False
+            resp = self._requests.post(url, headers=headers)
+            json_resp = resp.json()
+            resp.close()
+            # Handle error responses
+            if 'error' in json_resp:
+                raise RuntimeError('Error: ', json_resp['error_description'])
+            # Handle successful response
+            elif "access_token" in json_resp:
+                break
+            # sleep for _interval seconds
+            time.sleep(self._interval)
+        self.access_token = json_resp['access_token']
+        self.refresh_token = json_resp['refresh_token']
+        return True
+    
+    @property
+    def is_authorized(self):
+        return self._is_authorized
