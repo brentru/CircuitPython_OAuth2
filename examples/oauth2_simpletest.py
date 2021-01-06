@@ -7,7 +7,7 @@ from digitalio import DigitalInOut
 import adafruit_esp32spi.adafruit_esp32spi_socket as socket
 from adafruit_esp32spi import adafruit_esp32spi
 import adafruit_requests as requests
-import adafruit_oauth2 as oauth2
+from adafruit_oauth2 import oauth2
 
 # Add a secrets.py to your filesystem that has a dictionary called secrets with "ssid" and
 # "password" keys with your WiFi credentials. DO NOT share that file or commit it into Git or other
@@ -40,7 +40,7 @@ socket.set_interface(esp)
 requests.set_socket(socket, esp)
 
 # Set scope(s) of access required by the API you're using
-scopes = ["https://www.googleapis.com/auth/drive.metadata.readonly"]
+scopes = ["email"]
 
 # Initialize an oauth2 object
 google_auth = oauth2(requests, secrets['google_client_id'],
@@ -56,7 +56,7 @@ google_auth.request_codes()
 # Details in link below:
 # https://developers.google.com/identity/protocols/oauth2/limited-input-device#displayingthecode
 print("1) Navigate to the following URL in a web browser:", google_auth.verification_url)
-print("2) Enter the following code: ", google_auth.user_code)
+print("2) Enter the following code:", google_auth.user_code)
 
 # Poll Google's authorization server
 print("Waiting for browser authorization...")
@@ -65,13 +65,13 @@ if not google_auth.wait_for_authorization():
 
 print("Successfully authorized with Google!")
 
-print("\tAccess Token: ", google_auth.access_token)
-print("\tAccess Token Scope: ", google_auth.access_token_scope)
-print("\tAccess token expires in: %d seconds", google_auth.access_token)
-print("\tRefresh Token: ", google_auth.refresh_token)
+print("\tAccess Token:", google_auth.access_token)
+print("\tAccess Token Scope:", google_auth.access_token_scope)
+print("\tAccess token expires in: %d seconds"%google_auth.access_token_expiration)
+print("\tRefresh Token:", google_auth.refresh_token)
 
 # Refresh an access token
-print("Refreshing the access token")
+print("Refreshing access token...")
 if not google_auth.refresh_access_token():
     raise RuntimeError("Unable to refresh access token - has the token been revoked?")
 print("\tNew Access Token: ", google_auth.access_token)

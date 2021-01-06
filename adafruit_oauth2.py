@@ -136,7 +136,6 @@ class oauth2:
                 break
             # sleep for _interval seconds
             time.sleep(self._interval)
-        print(json_resp)
         self.access_token = json_resp['access_token']
         self.access_token_expiration = json_resp['expires_in']
         self.refresh_token = json_resp['refresh_token']
@@ -159,5 +158,5 @@ class oauth2:
         resp.close()
         self.access_token = json_resp['access_token']
         self.access_token_expiration = json_resp['expires_in']
-        self.access_token_scope = json_resp['access_token_scope']
+        self.access_token_scope = json_resp['scope']
         return True
