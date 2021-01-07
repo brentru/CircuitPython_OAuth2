@@ -1,14 +1,10 @@
-# SPDX-FileCopyrightText: 2020 Brent Rubell, written for Adafruit Industries
-#
-# SPDX-License-Identifier: Unlicense
+import socket
 import ssl
-import wifi
-import socketpool
 import adafruit_requests
 from adafruit_oauth2 import OAuth2
 
-# Add a secrets.py to your filesystem that has a dictionary called secrets with "ssid" and
-# "password" keys with your WiFi credentials. DO NOT share that file or commit it into Git or other
+# Add a secrets.py to your filesystem that has a dictionary called secrets with Google
+# application tokens. DO NOT share that file or commit it into Git or other
 # source control.
 # pylint: disable=no-name-in-module,wrong-import-order
 try:
@@ -17,13 +13,7 @@ except ImportError:
     print("Credentials and tokens are kept in secrets.py, please add them there!")
     raise
 
-print("Connecting to %s" % secrets["ssid"])
-wifi.radio.connect(secrets["ssid"], secrets["password"])
-print("Connected to %s!" % secrets["ssid"])
-
-pool = socketpool.SocketPool(wifi.radio)
-requests = adafruit_requests.Session(pool, ssl.create_default_context())
-
+requests = adafruit_requests.Session(socket, ssl.create_default_context())
 
 # Set scope(s) of access required by the API you're using
 scopes = ["email"]
