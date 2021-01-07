@@ -44,8 +44,7 @@ class OAuth2:  # pylint: disable=too-many-arguments, too-many-instance-attribute
     :param requests: An adafruit_requests object.
     :param str client_id: The client ID for your application.
     :param str client_secret: The client secret obtained from the API Console.
-    :param list scopes: Scopes that identify the resources the application
-                        can access on the user's behalf.
+    :param list scopes: Scopes that identify the resources used by the application.
     :param str access_token: Optional token which authorizes a Google API request.
     :param str refresh_token: Optional token which allows you to obtain a new access token.
 
