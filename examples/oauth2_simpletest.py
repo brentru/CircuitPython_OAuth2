@@ -7,7 +7,7 @@ from digitalio import DigitalInOut
 import adafruit_esp32spi.adafruit_esp32spi_socket as socket
 from adafruit_esp32spi import adafruit_esp32spi
 import adafruit_requests as requests
-from adafruit_oauth2 import oauth2
+from adafruit_oauth2 import OAuth2
 
 # Add a secrets.py to your filesystem that has a dictionary called secrets with "ssid" and
 # "password" keys with your WiFi credentials. DO NOT share that file or commit it into Git or other
@@ -42,9 +42,10 @@ requests.set_socket(socket, esp)
 # Set scope(s) of access required by the API you're using
 scopes = ["email"]
 
-# Initialize an oauth2 object
-google_auth = oauth2(requests, secrets['google_client_id'],
-                     secrets['google_client_secret'], scopes)
+# Initialize an OAuth2 object
+google_auth = OAuth2(
+    requests, secrets["google_client_id"], secrets["google_client_secret"], scopes
+)
 
 # Request device and user codes
 # https://developers.google.com/identity/protocols/oauth2/limited-input-device#step-1:-request-device-and-user-codes
@@ -55,7 +56,9 @@ google_auth.request_codes()
 # long enough to handle the user_code and verification_url.
 # Details in link below:
 # https://developers.google.com/identity/protocols/oauth2/limited-input-device#displayingthecode
-print("1) Navigate to the following URL in a web browser:", google_auth.verification_url)
+print(
+    "1) Navigate to the following URL in a web browser:", google_auth.verification_url
+)
 print("2) Enter the following code:", google_auth.user_code)
 
 # Poll Google's authorization server
@@ -67,7 +70,7 @@ print("Successfully authorized with Google!")
 
 print("\tAccess Token:", google_auth.access_token)
 print("\tAccess Token Scope:", google_auth.access_token_scope)
-print("\tAccess token expires in: %d seconds"%google_auth.access_token_expiration)
+print("\tAccess token expires in: %d seconds" % google_auth.access_token_expiration)
 print("\tRefresh Token:", google_auth.refresh_token)
 
 # Refresh an access token
