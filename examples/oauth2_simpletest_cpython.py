@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2020 Brent Rubell, written for Adafruit Industries
+#
+# SPDX-License-Identifier: Unlicense
 import socket
 import ssl
 import adafruit_requests
