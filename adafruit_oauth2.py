@@ -38,8 +38,8 @@ DEVICE_GRANT_TYPE = "&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevi
 
 
 class OAuth2:  # pylint: disable=too-many-arguments, too-many-instance-attributes
-    """Implements OAuth2.0 authorization to access
-    Google APIs via the OAuth 2.0 limited-input device application flow.
+    """Implements OAuth2.0 authorization to access Google APIs via
+    the OAuth 2.0 limited-input device application flow.
     https://developers.google.com/identity/protocols/oauth2/limited-input-device
     :param requests: An adafruit_requests object.
     :param str client_id: The client ID for your application.
@@ -120,8 +120,7 @@ class OAuth2:  # pylint: disable=too-many-arguments, too-many-instance-attribute
         until a response from Google's authorization server indicating
         that the user has responded to the access request, or until the
         user_code has expired.
-
-        Returns True if device was successfully authenticated, False otherwise.
+        :return: True if successfully authenticated, False otherwise.
 
         """
         headers = {
@@ -164,7 +163,8 @@ class OAuth2:  # pylint: disable=too-many-arguments, too-many-instance-attribute
 
     def refresh_access_token(self):
         """Refreshes an expired access token.
-        Returns True if able to refresh an access token, False otherwise.
+        :return: True if able to refresh an access token, False otherwise.
+
         """
 
         headers = {
